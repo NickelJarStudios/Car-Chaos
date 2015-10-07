@@ -1,0 +1,9 @@
+{
+    "name":"Car Chaos",
+    "version":"0.0.1",
+    "versionSticker":[0, 0, 1, "alpha"],
+    "description":"Racing Game of all time, BPA 2016"
+    "requiredPackages":["PyGame"],
+    "type":"application",
+    "categories":"video game"
+}
