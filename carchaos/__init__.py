@@ -101,6 +101,3 @@ class CarChaos:
     widgets={}
     menu_open=True
     background_color=(0, 0, 0)
-
-if __name__=="__main__":
-    car_chaos=CarChaos()
