@@ -8,6 +8,27 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."""
 #import sqlite
+try:
+    from ConfigParser import ConfigParser
+except ImportError:
+    from configparser import ConfigParser
+from os import path
 
 def load_save_file(location, number):
     """Function for loading a save game file."""
+    
+    
+def load_settings(location=None):
+    global config
+    config=ConfigParser()
+    try:
+        with open("config.cfg") as config_file:
+            config.readfp(config_file)
+    except IOError:
+        print("No conifg.cfg found in current directory, continuing...")
+    if location:
+        print(location)
+        config.read(location)
+    else:
+        config.read([path.realpath(path.expanduser(path.join(p))) for p in []])
+    return dict(config.items("GameSettings"))
