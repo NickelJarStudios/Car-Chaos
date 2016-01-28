@@ -8,5 +8,15 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."""
 from carchaos import CarChaos
+from argparse import ArgumentParser, FileType
 
-CarChaos().run() if __name__=="__main__" else "Why did you import this?"
+if __name__=="__main__":
+    argument_parser=ArgumentParser(prog="carchaos", add_help=True)
+    argument_parser.add_argument("-w", "--windowed", dest="start_in_fullscreen", action="store_false", help="Set Windowed, as opposed to fullscreen.")
+    argument_parser.add_argument("-f", "--fullscreen", dest="start_in_fullscreen", default=True, action="store_true", help="Sets fullscreen. Unless configured otherwise, enabled by default")
+    argument_parser.add_argument("-d", "--dimensions", default=None, help="Sets width and height WxH.")#fullscreen
+    argument_parser.add_argument("-c", "--configuration-file", default=None, type=FileType, help="Sets an alternate configuration file to use instead of the default.")
+    arguments=vars(argument_parser.parse_args())#sys.argv will be used by default, so no need to specify.
+    CarChaos(arguments).run()
+else:
+    print("Why did you import this?")

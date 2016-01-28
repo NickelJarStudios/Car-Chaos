@@ -13,6 +13,7 @@ try:
 except ImportError:
     from configparser import ConfigParser
 from os import path
+import json
 
 def load_save_file(location, number):
     """Function for loading a save game file."""
@@ -32,3 +33,13 @@ def load_settings(location=None):
     else:
         config.read([path.realpath(path.expanduser(path.join(p))) for p in []])
     return dict(config.items("GameSettings"))
+    
+def relative_directory(file_location, directory):
+    if directory.startswith("/"):
+        return directory
+    return path.join(file_location, directory)
+    
+def open_level_data(path):
+    with open(path) as level_data:
+        content=json.loads(level_data.read())
+    return content

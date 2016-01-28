@@ -6,6 +6,7 @@ import sys
 import os
 import time
 import re
+
 try:
     import pygame, pygame.locals
 except ImportError:
@@ -13,28 +14,9 @@ except ImportError:
         you must have pygame. See the README.md or README.txt file for
         instructions on how to get and install PyGame or run the installer.""")
 
-credits=[
-    "#Nickel Jar Studios",
-    "",
-    "Lead Programmer : Seth Nash",
-    "Lead Map/Level Design : Brandan Balram",
-    "Art/Sprite Picker : James T. Cowgill",
-    "Database management : Jordan Jones",
-    "",
-    "Software Used",
-    ":Python........................................................................Programming and Scripting.",
-    ":SQLite.....................................................................................Database and storage.",
-    ":Simple DirectMedia Layer................Visuals, Rendering, Content, Sound.",
-    ":PyGame.............................................................................Python bindings to SDL.",
-    "",
-    "GNU Image Manipulator..............................................................Editing Images.",
-    "Audacity.........................................Audio Editing, Creation and Modification."
-    "",
-    "#SPECIAL THANKS",
-    "",
-    "Fiona Nash, Emmanuel Nash, Kanye West, Jesus Christ, David Lopez, Lecrae Moore, Barack Obama"
-]
-
+with open("/".join(os.path.dirname(__file__).split("/")[:-1])+"/credits.txt") as credits_file:
+    credits=credits_file.read().decode("string_escape").splitlines()
+    
 class CarChaos:
     def __init__(self, command_line_input=None):
         pygame.init()
@@ -43,6 +25,7 @@ class CarChaos:
         self.starting_time=time.time()
         self.info=pygame.display.Info()
         self.height, self.width=self.info.current_h, self.info.current_w
+        pygame.key.set_repeat(100, 100)
         if not command_line_input:
             command_line_input={}
         elif command_line_input["dimensions"]:
@@ -62,6 +45,12 @@ class CarChaos:
                 if event.type==pygame.QUIT:
                     self.quit()
                 elif event.type==pygame.KEYDOWN:
+                    for key, binding in self.key_bindings["down"].iteritems():
+                        if keys[key]:
+                            command=self.command_bindings["down"].get(binding, None)
+                            if command and type(command[0])!=list:
+                                print(command)
+                                command[0]()
                     if keys[pygame.K_q]:
                         self.quit()
                     elif self.in_menu and self.current_widget:
@@ -90,6 +79,7 @@ class CarChaos:
                     elif keys[pygame.K_s] and keys[pygame.K_a]:
                         self.player.move_back()
                         self.player.move_left()
+                
                 elif event.type==pygame.VIDEORESIZE:
                     self.width, self.height=event.size
                     self.adjust_size()
@@ -101,7 +91,7 @@ class CarChaos:
         if (time.time()-self.starting_time)<=.5:#5:
             if not self.widget_exists("nickel-splash-logo"):
                 pygame.mouse.set_visible(False)#Hide cursor for splash-screen.
-                self.add_widget(interface.Image(os.path.join("/".join(__file__.split("/")[:-1]), "images/nickel-jar-studios-logo-white.png"), (self.width*.5, self.height*.5, 200, 200)), "nickel-splash-logo")
+                self.add_widget(interface.Image(storage.relative_directory("/".join(__file__.split("/")[:-1]), "images/nickel-jar-studios-logo-white.png"), (self.width*.5, self.height*.5, 200, 200)), "nickel-splash-logo")
                 self.add_widget(interface.Label("Nickel Jar Studios", "Ariel", (255, 255, 255), 15, (self.width*.5, self.height*.5), True), "nickel-splash-title")
                 copyright_text=interface.Label(u"Copyright © Brandan Balram, James Cowgill, Jordan Jones, Seth Nash", None, (255, 255, 255), 15, (self.width*.3, self.height*.9), True)
                 copyright_text.set_position(copyright_text.dimensions()[2]*.5, self.height-copyright_text.dimensions()[3])
@@ -132,11 +122,11 @@ class CarChaos:
         if not self.widget_exists("menu-play-button"):
             self.add_widget(interface.Label("Car Chaos", "Arial", (255, 255, 255), 
                 150, position=(self.width/2, self.height/4)), "game-title")
-            self.add_widget(interface.Button("Play", pygame.Color(90, 90, 90, 75),
+            self.add_widget(interface.Button("Play", pygame.Color(150, 150, 150, 255),
          (self.width/2-87.5, self.height*.5-25, 175, 50), self.select_level, self.widget_grabber), "menu-play-button")
-            self.add_widget(interface.Button("Options", pygame.Color(90, 90, 90, 75),
+            self.add_widget(interface.Button("Options", pygame.Color(150, 150, 90, 75),
          (self.width/2-87.5, self.height*.5+50, 175, 50), None, self.widget_grabber), "menu-options-button")
-            self.add_widget(interface.Button("Credits", pygame.Color(90, 90, 90, 75),
+            self.add_widget(interface.Button("Credits", pygame.Color(150, 90, 90, 75),
          (self.width/2-87.5, self.height*.5+125, 175, 50), self.roll_credits, self.widget_grabber), "menu-credits-button")
             self.add_widget(interface.Button("Exit", pygame.Color(90, 90, 90, 75),
          (self.width/2-87.5, self.height*.5+200, 175, 50), self.quit, self.widget_grabber), "menu-exit-button")
@@ -145,7 +135,6 @@ class CarChaos:
         self.set_state("in game")
         self.in_menu=False
         if self.player and self.level:
-            print(list(reversed(self.player.position())))
             self.screen.blit(self.player.image, tuple(reversed(self.player.position())))
         else:
             self.level=game_items.LevelOne()
@@ -154,14 +143,53 @@ class CarChaos:
     def select_level(self):
         self.set_state("level selector")
         self.in_menu=True
-        self.background_color=(255, 255, 0)
+        self.background_color=(255, 55, 55, .6)
         pygame.mouse.set_visible(True)
         font=pygame.font.SysFont(None, 30)
-        level_selector_title=interface.Label("Select a level", "Arial")
-        level_selector_title.set_position(self.width*.5, self.height*.1)
-        self.add_widget(level_selector_title, "level-selector-text")
-        menu_button=interface.Button("Menu", (255, 255, 255), (self.width*.1, self.height*.9, 100, 50), self.show_menu, self.window_grabber)
-        self.add_widget(menu_button, "menu-button-selector")
+        if not self.widget_exists("level-selector-text"):
+            for i in self.slide_animations:
+                del i
+            self.slide_animations=[]
+            level_selector_title=interface.Label("Select a level", "Arial")
+            level_selector_title.set_position(self.width*.5, self.height*.1)
+            self.add_widget(level_selector_title, "level-selector-text")
+            menu_button=interface.Button("Menu", (255, 255, 255), (self.width*.1, self.height*.9, 100, 50), self.show_menu, self.widget_grabber)
+            self.add_widget(menu_button, "menu-button-selector")
+            self.add_widget(level_selector_title, "level-selector-text")
+            load_level_button=interface.Button("Load from file", (255, 255, 255), (self.width*.2, self.height*.9, 200, 50), None, self.widget_grabber)
+            self.add_widget(load_level_button, "load-button-selector")
+            w=(self.width-50)/3
+            floating=self.height/3
+            for x, lev in enumerate(level.load_level_info()):
+                image=interface.Image("/".join(os.path.dirname(__file__).split("/")[:-1])+lev.image, (w/3+400*x, floating, w*.75, self.height*.25), self.widget_grabber)
+                slide_animation=interface.SlideAnimation(interface.LEFT, None, 2, .005)
+                self.slide_animations.append(slide_animation)
+                image.add_animation(slide_animation)
+                self.add_widget(image, "level-preview-%d" %x)
+                text=interface.Label(lev.title, "Arial", (255, 255, 255), 25, (w/3+400*x, floating*1.45))                  
+                slide_animation=interface.SlideAnimation(interface.LEFT, None, 2, .005)
+                self.slide_animations.append(slide_animation)
+                text.add_animation(slide_animation)
+                self.add_widget(text, "level-title-%d" %x)
+            #self.add_widget(interface.Rectangle((0,0,0,.4), ((0, self.height*.5), (self.width, self.height))), "background-level-selector")
+            self.add_widget(interface.Button("Previous", (255, 255, 255), (self.width-self.width*.3, self.height*.9, 125, 50), lambda :[(f.set_direction(None, interface.RIGHT), f.toggle(1)) for f in self.slide_animations], self.widget_grabber), "previous-level-selector")
+            self.add_widget(interface.Button("Next", (255, 255, 255), (self.width-self.width*.2, self.height*.9, 75, 50), lambda :[(f.set_direction(None, interface.LEFT), f.toggle(1)) for f in self.slide_animations], self.widget_grabber), "next-level-selector")
+            self.bind_command("down", "right", lambda :[(f.set_direction(None, interface.LEFT), f.toggle(1)) for f in self.slide_animations])
+            self.bind_command("down", "left", lambda :[(f.set_direction(None, interface.RIGHT), f.toggle(1)) for f in self.slide_animations])
+            self.level_title=interface.Label("Level", "Arial", (255, 255, 255), 30, (self.width*.5, floating*1.6))
+            self.add_widget(self.level_title, "level-title-selector")
+        for animation in self.slide_animations:
+            if 0<animation.x<self.width/3:
+                text=""
+                if type(animation.widget)==interface.Label:#Allow widgets to have metadata for this field.
+                   text=animation.widget.text
+                elif type(animation.widget)==interface.Label:#Using if, else shouldn't be as safe as being sure.
+                    text=animation.widget.source
+                self.level_title.set_text(text)
+        #if self.widgets["level-preview-0"].x>=self.width-50:#Create bounds for level instead.
+        #    [f.set_direction(None, interface.RIGHT) for f in self.slide_animations]
+        #elif self.widgets["level-preview-%d" %(len(self.slide_animations)-1)].x<=-50:
+        #    [f.set_direction(None, interface.LEFT) for f in self.slide_animations]
         
     def quit(self):
         pygame.font.quit()
@@ -205,22 +233,28 @@ class CarChaos:
         middle=self.width*.5
         bottom=self.height
         if not self.widget_exists("credits-title-0"):
-            self.background_color=(0, 0, 0)
+            self.background_color=(0, 255, 0)
             self.clear_widgets()
             for i, credit in enumerate(credits):
                 self.run(True)
-                credits_text=interface.Label(credit, "Ariel", (255, 255, 255), 20, (middle, bottom))
-                credits_text.add_animation(interface.SlideAnimation(None, interface.UP, 2, .01))
+                credits_text=interface.Label(credit, "Ariel", (255, 255, 255), 25, (middle, bottom))
+                credits_text.add_animation(interface.SlideAnimation(None, interface.UP, 2, .005, started=True))
                 self.add_widget(credits_text, "credits-title-%d" %i)
                 if ":" in credit:
                     bottom+=15
                 else:
                     bottom+=25
-                print("lel"+", ".join(self.widgets.keys()))
-        elif self.widget_exists("credits-title-4") and self.widgets["credits-title-4"].position[1]<=50:
+        elif self.widget_exists("credits-title-22") and self.widgets["credits-title-22"].position[1]<=-50:
             self.clear_widgets()
             self.show_menu()
         
+    
+    def bind_command(self, state, command, call, destination=None):
+        self.command_bindings[state][command]=(call, destination)
+    
+    def clear_commands(self):
+        for group in ["down", "released", "pressed"]:
+            self.command_bindings[group]=[]
     
     width=640
     height=640
@@ -231,6 +265,17 @@ class CarChaos:
     menu_open=True
     background_color=(0, 0, 0)
     current_widget=None
+    slide_animations=[]
+    key_bindings={
+        "down":{
+            pygame.K_RIGHT:"right",
+            pygame.K_LEFT:"left"
+        }
+    }
+    command_bindings={
+        "down":{
+        }
+    }
     in_menu=True
     player=None
     level=None

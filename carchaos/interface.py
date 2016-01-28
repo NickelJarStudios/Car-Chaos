@@ -16,6 +16,23 @@ DOWN=1
 LEFT=-1
 RIGHT=1
 
+class Event(object):
+    def __init__(self, name, call=None, *args):
+        self.name=name
+        self.call=call
+        self.args=args
+        
+    def call(self):
+        self.call_count+=1
+        if call:
+            self.call(*self.args)
+            self.call_success+=1
+            
+    def set_call(self, call):
+        self.call=call
+    call_count=0
+    call_success=0
+
 class Widget(object):
     """Base class for all widgets"""
     def dimensions(self):
@@ -39,11 +56,19 @@ class Widget(object):
         self.animations.append(animation)
         
     def __del__(self):
-        print("Bye")
         for animation in self.animations:
             del animation
-            print(len(self.animations))
+        
+    def set_position(self, x=None, y=None):
+        if None in (x, y):
+            x, y=self.x, self.y
+        self.position=(x, y)
+        self.x, self.y=x, y
+        
+    def set_meta(self, key, value):
+        self.meta_data[key]=value
     
+    meta_data={}
     x, y=0, 0
     animations=[]
         
@@ -65,23 +90,31 @@ class Label(Widget):
     def set_color(self, color):
         self.color=color
         
-    def set_position(self, x=None, y=None):
-        if None in (x, y):
-            x, y=self.x, self.y
-        self.position=(x, y)
-        
     def set_antialiasing(self, antialias):
         self.antialiasing=antialias
     
     def draw(self, display):
         super(Label, self).draw(display)
-        self.display=display
+        #self.display=display
         result=self.font.render(self.text, self.antialiasing, self.color)
         display.blit(result, (self.position[0]-result.get_width()*.5, self.position[1]-result.get_height()*.5))
-        self.width, self.height=result.get_size()
-        self._surface=result
+        #self.width, self.height=result.get_size()
+        #self._surface=result
         
+    def set_text(self, text):
+        self.text=text
     background_color=None
+    
+class Rectangle(Widget):
+    def __init__(self, color, dimensions, border=0):
+        self.color=color
+        self.dimensions=dimensions
+        self.shape=pygame.Rect(*dimensions)
+        self.border=border
+    
+    def draw(self, display):
+        super(Rectangle, self).draw(display)
+        pygame.draw.rect(display, self.color, self.shape, self.border)
 
 class Button(Widget):
     def __init__(self, text, color=(0, 0, 80), dimensions=(0, 0, 50, 100), call=None, grabber=None):
@@ -114,7 +147,7 @@ class Button(Widget):
         return (self.x, self.y, self.width, self.height)
         
     def draw(self, display):
-        super(Button, self).draw()
+        super(Button, self).draw(display)
         if display==None:
             display=self.display
         elif self.display!=display:
@@ -143,21 +176,31 @@ class Button(Widget):
         self.hovered=mode
         self.color=self.highlight_color
         
+    def set_text_color(self, *color):
+        self.label.set_color(color)
+        
     display=None
         
 class Image(Widget):
     """An image widget"""
     def __init__(self, source, dimensions, grabber=None):
         self.source=source
-        self.x, self.y, self.width, self.height=dimensions
+        self.x, self.y, self.width,  self.height=dimensions
+        self.position=(self.x, self.y)
         self.grabber=grabber
+        self.surface=pygame.image.load(self.source)
+        print(source)
+        if len(dimensions)>2 and None not in dimensions[2:]:
+            print(dimensions)
+            print(dimensions[2:])
+            self.surface=pygame.transform.scale(self.surface, [int(i) for i in dimensions[2:]])
         
     def dimensions(self):
         return (self.x, self.y, self.width, self.height)
         
     def draw(self, display):
         super(Image, self).draw()
-        display.blit(pygame.image.load(self.source), (self.x-self.width*.5, self.y-self.height*.5))
+        display.blit(self.surface, (self.x-self.width*.5, self.y-self.height*.5, self.width, self.height))
         
 class Animation(object):
     """Base class for all widget animations"""
@@ -169,23 +212,76 @@ class Animation(object):
     def __del__(self):
         print("\n"*40)
     
+    def start(self):
+        self.playing=True
+        
+    def stop(self):
+        self.playing=False
+        
+    def toggle(self):
+        self.playing=False if self.playing else True
+    
+    playing=False
+    
+    
 class SlideAnimation(Animation):
-    def __init__(self, vertical_direction, horizontal_direction, speed=1, rate=1):
+    def __init__(self, vertical_direction, horizontal_direction, speed=1, rate=1, started=False):
         super(SlideAnimation, self).__init__()
         self.horizontal_direction=horizontal_direction
         self.vertical_direction=vertical_direction
         self.speed=speed
         self.last_update=time.time()
         self.rate=rate
+        self.playing=started
     
     def update_animation(self):
-        if time.time()>=self.last_update+self.rate:
+        t=time.time()
+        if t>=self.last_update+self.rate and self.playing:
             if self.horizontal_direction!=None:
                 self.y+=self.horizontal_direction*self.speed
             if self.vertical_direction!=None:
                 self.x+=self.vertical_direction*self.speed
             self.widget.set_position(self.x, self.y)
             self.last_update=time.time()
+        if self.playing and self.limit!=0 and t>=self.limit+self.limit_start:
+            self.playing=False
+            self.limit=0
+            
+            
+    def reverse_direction(self, horizontal=None, vertical=None):
+        if horizontal:
+            self.horizontal_direction*=-1
+        if vertical:
+            self.vertical_direction*=-1
         
+    def set_direction(self, horizontal=None, vertical=None):
+        if horizontal:
+            self.vertical_direction=horizontal
+        if vertical:
+            self.vertical_direction=vertical
+    
+    def start(self, limit=None):
+        super(SlideAnimation, self).start()
+        self.limit_start=time.time()
+        print(limit)
+        if limit:
+            self.limit=limit
+    
+    def toggle(self, limit=None):
+        if self.playing:
+            return self.stop()
+        self.start(limit)
         
+    def set_slide_event(self, call):
+        #slide_event=Event("slide", call)
+        #self.slide_event=slide_event
+        slide_event.set_call(call)
+        events.append(self.slide_event)
+            
+    
+    events=[]    
     last_update=0
+    limit_start=0
+    limit=0
+    slide_event=Event("slide")
+    

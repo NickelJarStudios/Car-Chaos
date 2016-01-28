@@ -1,0 +1,25 @@
+#Nickel Jar Studios
+
+Lead Programmer : Seth Nash
+Lead Map/Level Design : Brandon Balram
+Art/Sprite Picker : James T. Cowgill
+Database management : Jordan Jones
+
+Software Used
+:Python........................................................................Programming and Scripting.
+:SQLite.....................................................................................Database and storage.
+:Simple DirectMedia Layer................Visuals, Rendering, Content, Sound.
+:PyGame.............................................................................Python bindings to SDL.
+    
+GNU Image Manipulator..............................................................Editing Images.
+Audacity.........................................Audio Editing, Creation and Modification.
+
+
+Special Thanks to Business Professionals of America for allowing us to compete.
+
+Special Thanks
+Nadia Balram, Martha Paz-Solden, Daniel Antezanna, Kanye West
+Donald Trump, Barack Obama, Kim Kardashian, Hillary Clinton
+George W. Bush, Monika Lewinski, Bill Clinton, El Chapo, Sean Penn, Abu Bakr al-Baghdadi
+Autism in general, including works of Pusha. T and whoever else
+ Christopher Rodriguez is a fan of.
