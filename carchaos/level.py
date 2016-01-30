@@ -26,9 +26,17 @@ class LevelInfo:
         self.description=data["description"]
         self.image=data["image"]
         
+    def set_folder_location(self, location):
+        self.folder_location=location
+    folder_location="/levels/"
+        
 def load_level_info():
-    return [LevelInfo(directory) for directory in [
-        "levels/level01/meta.json", 
-        "levels/level02/meta.json", 
-        "levels/level03/meta.json"
-    ]]
+    levels=[]
+    for directory in ["level01/meta.json", "level02/meta.json", "level03/meta.json"]:
+        try:
+            level=LevelInfo(open_level_data(relative_directory("/".join(__file__.split("/")[:-2])+"/levels", directory)))
+            level.set_folder_location("levels/"+"/".join(directory.split("/")[:-1]))
+            levels.append(level)
+        except IOError:
+            print("Failed to load level: "+directory)#Add an error message.
+    return levels

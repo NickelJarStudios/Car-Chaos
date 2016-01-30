@@ -93,6 +93,9 @@ class Label(Widget):
     def set_antialiasing(self, antialias):
         self.antialiasing=antialias
     
+    def set_text(self, text):
+        self.text=text
+    
     def draw(self, display):
         super(Label, self).draw(display)
         #self.display=display
@@ -189,10 +192,7 @@ class Image(Widget):
         self.position=(self.x, self.y)
         self.grabber=grabber
         self.surface=pygame.image.load(self.source)
-        print(source)
         if len(dimensions)>2 and None not in dimensions[2:]:
-            print(dimensions)
-            print(dimensions[2:])
             self.surface=pygame.transform.scale(self.surface, [int(i) for i in dimensions[2:]])
         
     def dimensions(self):
@@ -263,7 +263,6 @@ class SlideAnimation(Animation):
     def start(self, limit=None):
         super(SlideAnimation, self).start()
         self.limit_start=time.time()
-        print(limit)
         if limit:
             self.limit=limit
     

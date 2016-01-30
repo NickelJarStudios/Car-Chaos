@@ -16,6 +16,7 @@ if __name__=="__main__":
     argument_parser.add_argument("-f", "--fullscreen", dest="start_in_fullscreen", default=True, action="store_true", help="Sets fullscreen. Unless configured otherwise, enabled by default")
     argument_parser.add_argument("-d", "--dimensions", default=None, help="Sets width and height WxH.")#fullscreen
     argument_parser.add_argument("-c", "--configuration-file", default=None, type=FileType, help="Sets an alternate configuration file to use instead of the default.")
+    argument_parser.add_argument("--fps", action="store_true", help="Shows the FPS (frames per second) in the top-left corner as the game is running.")
     arguments=vars(argument_parser.parse_args())#sys.argv will be used by default, so no need to specify.
     CarChaos(arguments).run()
 else:

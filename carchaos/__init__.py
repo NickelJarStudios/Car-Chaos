@@ -22,6 +22,7 @@ class CarChaos:
         pygame.init()
         pygame.font.init()
         pygame.display.init()
+        self.timer=pygame.time.Clock()
         self.starting_time=time.time()
         self.info=pygame.display.Info()
         self.height, self.width=self.info.current_h, self.info.current_w
@@ -33,6 +34,7 @@ class CarChaos:
             self.width, self.height=int(command_line_input["width"]), int(command_line_input["height"])
         settings=storage.load_settings(command_line_input["configuration_file"])
         settings.update((i, x) for i, x in command_line_input.iteritems() if x is not None)#Gives "settings.update(dict)" a dict of items from "command_line_input", where x isn't None (As opposed to using "not x" which would get rid of all false values and "x!=None" which would be slightly less readable).
+        self.show_frame_rate=settings["fps"]
         self.screen=pygame.display.set_mode((self.width, self.height), pygame.FULLSCREEN if settings["start_in_fullscreen"] else pygame.RESIZABLE)
         self.menu_open=True
         
@@ -49,7 +51,6 @@ class CarChaos:
                         if keys[key]:
                             command=self.command_bindings["down"].get(binding, None)
                             if command and type(command[0])!=list:
-                                print(command)
                                 command[0]()
                     if keys[pygame.K_q]:
                         self.quit()
@@ -88,6 +89,11 @@ class CarChaos:
     
     def update_graphics(self):
         pygame.draw.rect(self.screen, self.background_color, (0, 0, self.width, self.height))
+        if self.show_frame_rate:
+            if not self.widget_exists("fps-label"):
+                self.fps_label=interface.Label("FPS...", None, (10, 255, 255), 15, (20, 10))
+                self.add_widget(self.fps_label, "fps-label")
+            self.fps_label.set_text("FPS: %d" %self.timer.get_fps())
         if (time.time()-self.starting_time)<=.5:#5:
             if not self.widget_exists("nickel-splash-logo"):
                 pygame.mouse.set_visible(False)#Hide cursor for splash-screen.
@@ -110,6 +116,7 @@ class CarChaos:
             self.play_game()
         for widget in self.widgets.values():
             widget.draw(self.screen)
+        self.timer.tick()
     
     def show_menu(self):
         self.set_state("start menu")
@@ -161,7 +168,7 @@ class CarChaos:
             w=(self.width-50)/3
             floating=self.height/3
             for x, lev in enumerate(level.load_level_info()):
-                image=interface.Image("/".join(os.path.dirname(__file__).split("/")[:-1])+lev.image, (w/3+400*x, floating, w*.75, self.height*.25), self.widget_grabber)
+                image=interface.Image(os.path.join("/".join(os.path.dirname(__file__).split("/")[:-1]), lev.folder_location, lev.image), (w/3+400*x, floating, w*.75, self.height*.25), self.widget_grabber)
                 slide_animation=interface.SlideAnimation(interface.LEFT, None, 2, .005)
                 self.slide_animations.append(slide_animation)
                 image.add_animation(slide_animation)
@@ -172,7 +179,8 @@ class CarChaos:
                 text.add_animation(slide_animation)
                 self.add_widget(text, "level-title-%d" %x)
             #self.add_widget(interface.Rectangle((0,0,0,.4), ((0, self.height*.5), (self.width, self.height))), "background-level-selector")
-            self.add_widget(interface.Button("Previous", (255, 255, 255), (self.width-self.width*.3, self.height*.9, 125, 50), lambda :[(f.set_direction(None, interface.RIGHT), f.toggle(1)) for f in self.slide_animations], self.widget_grabber), "previous-level-selector")
+            self.add_widget(interface.Button("Play", (255, 255, 255), (self.width-self.width*.35, self.height*.75, 200, 100)), "play-button")
+            self.add_widget(interface.Button("Previous", (255, 255, 255), (self.width-self.width*.35, self.height*.9, 125, 50), lambda :[(f.set_direction(None, interface.RIGHT), f.toggle(1)) for f in self.slide_animations], self.widget_grabber), "previous-level-selector")
             self.add_widget(interface.Button("Next", (255, 255, 255), (self.width-self.width*.2, self.height*.9, 75, 50), lambda :[(f.set_direction(None, interface.LEFT), f.toggle(1)) for f in self.slide_animations], self.widget_grabber), "next-level-selector")
             self.bind_command("down", "right", lambda :[(f.set_direction(None, interface.LEFT), f.toggle(1)) for f in self.slide_animations])
             self.bind_command("down", "left", lambda :[(f.set_direction(None, interface.RIGHT), f.toggle(1)) for f in self.slide_animations])
@@ -279,6 +287,7 @@ class CarChaos:
     in_menu=True
     player=None
     level=None
+    show_frame_rate=False
     
 if __name__=="__main__":
     print("Please run from \"run.py,\" from this package's parent directory. Look for README or README.md for more details.")

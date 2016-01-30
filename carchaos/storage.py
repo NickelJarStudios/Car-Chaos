@@ -28,7 +28,6 @@ def load_settings(location=None):
     except IOError:
         print("No conifg.cfg found in current directory, continuing...")
     if location:
-        print(location)
         config.read(location)
     else:
         config.read([path.realpath(path.expanduser(path.join(p))) for p in []])
