@@ -1,11 +1,12 @@
  #!/usr/bin/env python
  # -*- coding: utf-8 -*-
 
-from . import storage, player, level, interface, game_items
+from . import storage, player, level, interface, game_items, maps, stuff
 import sys
 import os
 import time
 import re
+from copy import deepcopy
 
 try:
     import pygame, pygame.locals
@@ -23,6 +24,7 @@ class CarChaos:
         pygame.font.init()
         pygame.display.init()
         self.timer=pygame.time.Clock()
+        stuff.clock=self.timer
         self.starting_time=time.time()
         self.info=pygame.display.Info()
         self.height, self.width=self.info.current_h, self.info.current_w
@@ -63,6 +65,8 @@ class CarChaos:
                             self.current_widget.go_down()
                         elif keys[pygame.K_LEFT]:
                             self.current_widget.go_left()
+                if self.state=="in game":
+                    self.play_game()
                 if self.state=="in game" and self.player:
                     if keys[pygame.K_w]:
                         self.player.move_forward()
@@ -88,10 +92,11 @@ class CarChaos:
             time.sleep(0.00001)
     
     def update_graphics(self):
-        pygame.draw.rect(self.screen, self.background_color, (0, 0, self.width, self.height))
+        if self.keep_background:
+            self.screen.fill(self.background_color)
         if self.show_frame_rate:
             if not self.widget_exists("fps-label"):
-                self.fps_label=interface.Label("FPS...", None, (10, 255, 255), 15, (20, 10))
+                self.fps_label=interface.Label("FPS...", None, (10, 255, 255), 20, (25, 15))
                 self.add_widget(self.fps_label, "fps-label")
             self.fps_label.set_text("FPS: %d" %self.timer.get_fps())
         if (time.time()-self.starting_time)<=.5:#5:
@@ -115,18 +120,20 @@ class CarChaos:
         elif self.player:
             self.play_game()
         for widget in self.widgets.values():
-            widget.draw(self.screen)
+            widget.draw(self.screen)########
+            print(self.widgets)
         self.timer.tick()
     
     def show_menu(self):
         self.set_state("start menu")
-        self.in_menu=True
-        self.background_color=(0, 0, 255)
         pygame.mouse.set_visible(True)
         font=pygame.font.SysFont(None, 30)#font.render("Car Chaos", 1, (255, 255, 255))
         #self.screen.blit(game_title, (self.width/2-30, self.height/4))
         #
         if not self.widget_exists("menu-play-button"):
+            self.in_menu=True
+            self.update_background=True
+            self.background_color=(0, 0, 255)
             self.add_widget(interface.Label("Car Chaos", "Arial", (255, 255, 255), 
                 150, position=(self.width/2, self.height/4)), "game-title")
             self.add_widget(interface.Button("Play", pygame.Color(150, 150, 150, 255),
@@ -139,21 +146,35 @@ class CarChaos:
          (self.width/2-87.5, self.height*.5+200, 175, 50), self.quit, self.widget_grabber), "menu-exit-button")
         
     def play_game(self):
+        #self.set_state("in game")
+        #self.in_menu=False
+        pygame.draw.rect(self.screen, (255, 255, 255), (100, 0, self.width*.5, self.height))
+        self.level.update()
+            
+    def play_level(self, level_info=None):
+        level_info=self.selected_level if not level_info else level_info#kek
+        pygame.mouse.set_visible(False)
+        self.clear_widgets()
+        #self.keep_background=False
         self.set_state("in game")
         self.in_menu=False
-        if self.player and self.level:
-            self.screen.blit(self.player.image, tuple(reversed(self.player.position())))
-        else:
-            self.level=game_items.LevelOne()
-            self.player=self.level.create_player()
-            
+        try:
+            self.level=level_info.create_level()
+            self.screen.fill((255, 255, 255))
+            self.level.set_surface(self.screen)
+            self.level.load_game()
+            self.level.start()
+        except level.LevelError as e:
+            self.show_error(e)
+    
     def select_level(self):
         self.set_state("level selector")
-        self.in_menu=True
-        self.background_color=(255, 55, 55, .6)
         pygame.mouse.set_visible(True)
         font=pygame.font.SysFont(None, 30)
         if not self.widget_exists("level-selector-text"):
+            self.in_menu=True
+            self.keep_background=True
+            self.background_color=(255, 55, 55, .6)
             for i in self.slide_animations:
                 del i
             self.slide_animations=[]
@@ -167,37 +188,46 @@ class CarChaos:
             self.add_widget(load_level_button, "load-button-selector")
             w=(self.width-50)/3
             floating=self.height/3
-            for x, lev in enumerate(level.load_level_info()):
+            for x, level_object in enumerate(level.load_level_info()):
+                lev=deepcopy(level_object)
                 image=interface.Image(os.path.join("/".join(os.path.dirname(__file__).split("/")[:-1]), lev.folder_location, lev.image), (w/3+400*x, floating, w*.75, self.height*.25), self.widget_grabber)
                 slide_animation=interface.SlideAnimation(interface.LEFT, None, 2, .005)
+                slide_animation.set_meta("level", lev)
                 self.slide_animations.append(slide_animation)
                 image.add_animation(slide_animation)
                 self.add_widget(image, "level-preview-%d" %x)
                 text=interface.Label(lev.title, "Arial", (255, 255, 255), 25, (w/3+400*x, floating*1.45))                  
                 slide_animation=interface.SlideAnimation(interface.LEFT, None, 2, .005)
+                slide_animation.set_meta("level", lev)#Set_meta just adds it to a dict
                 self.slide_animations.append(slide_animation)
                 text.add_animation(slide_animation)
                 self.add_widget(text, "level-title-%d" %x)
             #self.add_widget(interface.Rectangle((0,0,0,.4), ((0, self.height*.5), (self.width, self.height))), "background-level-selector")
-            self.add_widget(interface.Button("Play", (255, 255, 255), (self.width-self.width*.35, self.height*.75, 200, 100)), "play-button")
+            self.play_button=interface.Button("Play", (255, 255, 255), (self.width-self.width*.35, self.height*.75, 200, 100))
+            self.add_widget(self.play_button, "play-button")
             self.add_widget(interface.Button("Previous", (255, 255, 255), (self.width-self.width*.35, self.height*.9, 125, 50), lambda :[(f.set_direction(None, interface.RIGHT), f.toggle(1)) for f in self.slide_animations], self.widget_grabber), "previous-level-selector")
             self.add_widget(interface.Button("Next", (255, 255, 255), (self.width-self.width*.2, self.height*.9, 75, 50), lambda :[(f.set_direction(None, interface.LEFT), f.toggle(1)) for f in self.slide_animations], self.widget_grabber), "next-level-selector")
             self.bind_command("down", "right", lambda :[(f.set_direction(None, interface.LEFT), f.toggle(1)) for f in self.slide_animations])
             self.bind_command("down", "left", lambda :[(f.set_direction(None, interface.RIGHT), f.toggle(1)) for f in self.slide_animations])
             self.level_title=interface.Label("Level", "Arial", (255, 255, 255), 30, (self.width*.5, floating*1.6))
             self.add_widget(self.level_title, "level-title-selector")
+            
         for animation in self.slide_animations:
             if 0<animation.x<self.width/3:
                 text=""
-                if type(animation.widget)==interface.Label:#Allow widgets to have metadata for this field.
-                   text=animation.widget.text
-                elif type(animation.widget)==interface.Label:#Using if, else shouldn't be as safe as being sure.
+                if type(animation.widget)==interface.Label:
+                    text=animation.widget.text
+                elif type(animation.widget)==interface.Image:
                     text=animation.widget.source
-                self.level_title.set_text(text)
+                self.level_title.set_text(text+str(id(animation.meta_data)))#Quickest way of checking without leaving the program
+                self.play_button.set_text("Play "+text)
+                self.selected_level=animation.meta_data["level"]
+                self.play_button.set_callback(self.play_level)#Put everything on a surface so that the world can move around with the car, while not interrupting the physics.
         #if self.widgets["level-preview-0"].x>=self.width-50:#Create bounds for level instead.
         #    [f.set_direction(None, interface.RIGHT) for f in self.slide_animations]
         #elif self.widgets["level-preview-%d" %(len(self.slide_animations)-1)].x<=-50:
         #    [f.set_direction(None, interface.LEFT) for f in self.slide_animations]
+                continue
         
     def quit(self):
         pygame.font.quit()
@@ -228,6 +258,7 @@ class CarChaos:
         
     def clear_widgets(self):
         self.widgets.clear()
+        self.widgets={}
         
     def set_state(self, state, clear_previous=True):
         if self.state!=state and clear_previous:
@@ -235,12 +266,13 @@ class CarChaos:
         self.state=state
         
     def roll_credits(self):
-        self.in_menu=False
         self.state="credits rolling"
         pygame.mouse.set_visible(False)
         middle=self.width*.5
         bottom=self.height
         if not self.widget_exists("credits-title-0"):
+            self.in_menu=False
+            self.keep_background=True
             self.background_color=(0, 255, 0)
             self.clear_widgets()
             for i, credit in enumerate(credits):
@@ -264,6 +296,9 @@ class CarChaos:
         for group in ["down", "released", "pressed"]:
             self.command_bindings[group]=[]
     
+    def show_error(error, message, severity=1):
+        print("[%d]%s: %s" %(severity, str(error), message))
+    
     width=640
     height=640
     fullscreen_enabled=True
@@ -272,6 +307,7 @@ class CarChaos:
     widgets={}
     menu_open=True
     background_color=(0, 0, 0)
+    keep_background=True
     current_widget=None
     slide_animations=[]
     key_bindings={

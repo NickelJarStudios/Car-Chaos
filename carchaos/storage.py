@@ -42,3 +42,6 @@ def open_level_data(path):
     with open(path) as level_data:
         content=json.loads(level_data.read())
     return content
+    
+def get_levels_directory():
+    return path.sep.join(__file__.split("/")[:-2])+path.sep+"levels"

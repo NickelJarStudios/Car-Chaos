@@ -1,4 +1,4 @@
-> Car Chaos
+ Car Chaos
 =========
 Racing Game of all time, BPA 2016
 ---------------------------------
@@ -21,7 +21,7 @@ These tasks are shared and developed individually, occassionally with the assist
 
 ### License
 This game is released under the BSD License.
-> Copyright (c) 2015-2016, Quarter Jar Studios, Seth Nash, Jordan Jones, Brandan Balram, James Cogwill
+> Copyright (c) 2015-2016, Nickel Jar Studios, Seth Nash, Jordan Jones, Brandan Balram, James Cogwill
 >All rights reserved.
 
 >Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@ modification, are permitted provided that the following conditions are met:
     * Redistributions in binary form must reproduce the above copyright
 >      notice, this list of conditions and the following disclaimer in the
 >      documentation and/or other materials provided with the distribution.
->    * Neither the name of the Quarter Jar Studios members nor the
+>    * Neither the name of the Nickel Jar Studios members nor the
       names of its contributors may be used to endorse or promote products
 >      derived from this software without specific prior written permission.
 >

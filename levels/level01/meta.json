@@ -4,8 +4,22 @@
     "description":"A basic level introducing you to how to play Car Chaos.",
     "difficulty":1,
     "main-file":"main.py",
-    "resources":[
-        "images/sand.png",
-        "images/desert_road.png"
-    ]
+    "module":"main",
+    "resources":{
+        "sprites":[
+            "images/sand.png",
+            "images/desert_road.png"
+        ],
+        "animations":{
+            "tutorial-driver":{
+                "driving":[
+                    "images/driving-forward-0.png",
+                    "images/driving-forward-1.png",
+                    "images/driving-forward-2.png",
+                    "images/driving-forward-3.png",
+                    "images/driving-forward-4.png"
+                ]
+            }
+        }
+    }
 }

@@ -130,6 +130,8 @@ class Button(Widget):
         
     def set_text(self, text):
         self.text=text
+        if type(text)==str:
+            self.label.set_text(text)
         
     def set_size(self, width, height):
         self.width=width
@@ -221,6 +223,12 @@ class Animation(object):
     def toggle(self):
         self.playing=False if self.playing else True
     
+    def set_meta(self, key, value):
+        self.meta_data[key]=value
+        
+    def get_meta(self, key):
+        return self.meta_data[key]
+    
     playing=False
     
     
@@ -233,6 +241,7 @@ class SlideAnimation(Animation):
         self.last_update=time.time()
         self.rate=rate
         self.playing=started
+        self.meta_data={}
     
     def update_animation(self):
         t=time.time()
@@ -276,11 +285,9 @@ class SlideAnimation(Animation):
         #self.slide_event=slide_event
         slide_event.set_call(call)
         events.append(self.slide_event)
-            
     
     events=[]    
     last_update=0
     limit_start=0
     limit=0
     slide_event=Event("slide")
-    
